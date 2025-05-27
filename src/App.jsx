@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Zap, AlertTriangle, CheckCircle, Loader2, Bot, Sparkles, AlignLeft, Hash, PictureInPicture, KeyRound, ChevronDown, Copy, Settings2, History, Trash2, Eye, RefreshCw } from 'lucide-react';
+import { Send, Zap, AlertTriangle, CheckCircle, Loader2, Bot, Sparkles, AlignLeft, Hash, PictureInPicture, KeyRound, ChevronDown, Copy, Settings2, History, Trash2, Eye, RefreshCw, HelpCircle } from 'lucide-react';
 
-// Constante base do prompt. Partes serão adicionadas/modificadas dinamicamente.
+// Constante base do prompt.
 const baseSpecializedPrompt = `Sua missão é criar uma postagem profissional para LinkedIn, otimizada para MÁXIMO engajamento e POTENCIAL VIRAL, aplicando TODAS as técnicas relevantes da pesquisa fornecida sobre "Estratégias de Escrita e Estrutura em Postagens Virais do LinkedIn". O usuário fornecerá apenas o [ASSUNTO CENTRAL DA POSTAGEM] ou um [LINK DE REFERÊNCIA] sobre o qual a postagem deve ser baseada.
 [INSTRUCAO_LIMITE_CARACTERES]
 [INSTRUCAO_VARIACAO]
@@ -90,21 +90,37 @@ Prompt para Imagem (Estilo Profissional/Artístico[PLACEHOLDER_TITULO_TEXTO_IMAG
 Agora, por favor, gere a postagem para LinkedIn com base no seguinte fornecido pelo usuário:
 `;
 
+// Componente Tooltip Simples
+const InfoTooltip = ({ text }) => (
+  <div className="relative flex items-center group ml-2">
+    <HelpCircle size={16} className="text-slate-400 cursor-help" />
+    <div
+      className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-slate-700 text-slate-200 text-xs rounded-md shadow-lg
+                 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-20
+                 pointer-events-none"
+      style={{whiteSpace: 'normal'}} // Permite quebra de linha no tooltip
+    >
+      {text}
+       <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-700"></div> {/* Seta do tooltip */}
+    </div>
+  </div>
+);
+
+
 const BlockDisplay = ({ blockId, title, content, icon: IconComponent, onContentChange, children }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const textAreaRef = React.useRef(null); // Criar uma ref para a textarea
+  const textAreaRef = React.useRef(null);
 
   const handleTextChange = (e) => {
     onContentChange(blockId, e.target.value);
   };
 
-  // Ajusta a altura do textarea dinamicamente
   useEffect(() => {
     if (textAreaRef.current) {
-      textAreaRef.current.style.height = 'auto'; // Redefine a altura para recalcular scrollHeight
-      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`; // Ajusta para o conteúdo
+      textAreaRef.current.style.height = 'auto';
+      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
     }
-  }, [content]); // Executa quando o conteúdo muda
+  }, [content]);
 
 
   return (
@@ -115,13 +131,13 @@ const BlockDisplay = ({ blockId, title, content, icon: IconComponent, onContentC
       </div>
       {typeof content === 'string' ? (
         <textarea
-          ref={textAreaRef} // Atribuir a ref
-          id={`textarea-${blockId}`} // Manter o ID se for usado em outro lugar, embora a ref seja melhor para manipulação direta
+          ref={textAreaRef}
+          id={`textarea-${blockId}`}
           value={content}
           onChange={handleTextChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          className="w-full min-h-[100px] p-4 bg-slate-900/70 text-slate-300 text-sm leading-relaxed rounded-md border-none focus:ring-0 focus:outline-none resize-none" // Removido overflow-y-hidden
+          className="w-full min-h-[100px] p-4 bg-slate-900/70 text-slate-300 text-sm leading-relaxed rounded-md border-none focus:ring-0 focus:outline-none resize-none"
           placeholder="Conteúdo do bloco..."
           rows="3"
         />
@@ -503,6 +519,7 @@ export default function App() {
           <div className="mb-6 p-4 border border-slate-700 rounded-lg bg-slate-800/30">
             <h2 className="text-xl font-semibold text-cyan-400 mb-4 flex items-center">
                 <KeyRound className="w-6 h-6 mr-2"/> Configuração da API
+                <InfoTooltip text="Sua chave de API é enviada diretamente do seu navegador para a API do Google e não é armazenada permanentemente por esta aplicação (exceto no histórico local do seu navegador, se você salvar uma geração). Trate sua chave com cuidado." />
             </h2>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -636,6 +653,7 @@ export default function App() {
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-cyan-400 flex items-center">
                     <History className="w-6 h-6 mr-2"/> Histórico de Gerações
+                    <InfoTooltip text="Seu histórico de gerações é salvo localmente no seu navegador. Nenhuma chave de API é salva." />
                 </h2>
                 <button
                     onClick={() => setShowHistory(!showHistory)}
@@ -692,38 +710,44 @@ export default function App() {
             )}
           </div>
 
+          {/* Resultados da Geração */}
+          {Object.keys(generatedBlocks).length > 0 && (
+            <div className="mt-10">
+                <div className="flex items-center mb-4">
+                    <h2 className="text-2xl font-bold text-sky-400">Resultados da Geração</h2>
+                    <InfoTooltip text="O conteúdo gerado pela IA é exibido como texto para sua segurança, prevenindo a execução de scripts. Você pode editar os blocos antes de copiar." />
+                </div>
+                <div className="space-y-8">
+                    {blockDefinitions.map(blockDef => (
+                        <BlockDisplay
+                            key={blockDef.id}
+                            blockId={blockDef.id}
+                            title={blockDef.title}
+                            content={generatedBlocks[blockDef.id]}
+                            icon={blockDef.icon}
+                            onContentChange={handleBlockContentChange}
+                        >
+                        </BlockDisplay>
+                    ))}
+                    <div className="mt-8 text-center">
+                        <button
+                            onClick={handleCopyToClipboard}
+                            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all duration-300 ease-in-out flex items-center justify-center mx-auto group"
+                            disabled={Object.keys(generatedBlocks).length === 0 || isLoadingText || isGeneratingVariation}
+                        >
+                            <Copy className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                            Copiar Postagem para LinkedIn
+                        </button>
+                        {copySuccess && <p className="text-green-400 mt-3 text-sm transition-opacity duration-500">{copySuccess}</p>}
+                    </div>
+                </div>
+            </div>
+          )}
 
           {(isLoadingText && Object.keys(generatedBlocks).length === 0) && (
             <div className="mt-10 text-center">
               <Loader2 className="w-12 h-12 mx-auto text-cyan-400 animate-spin" />
               <p className="text-slate-400 mt-3">Processando sua solicitação...</p>
-            </div>
-          )}
-
-          {Object.keys(generatedBlocks).length > 0 && (
-            <div className="mt-10 space-y-8">
-              {blockDefinitions.map(blockDef => (
-                <BlockDisplay
-                    key={blockDef.id}
-                    blockId={blockDef.id}
-                    title={blockDef.title}
-                    content={generatedBlocks[blockDef.id]}
-                    icon={blockDef.icon}
-                    onContentChange={handleBlockContentChange}
-                >
-                </BlockDisplay>
-              ))}
-              <div className="mt-8 text-center">
-                <button
-                    onClick={handleCopyToClipboard}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all duration-300 ease-in-out flex items-center justify-center mx-auto group"
-                    disabled={Object.keys(generatedBlocks).length === 0 || isLoadingText || isGeneratingVariation}
-                >
-                    <Copy className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                    Copiar Postagem para LinkedIn
-                </button>
-                {copySuccess && <p className="text-green-400 mt-3 text-sm transition-opacity duration-500">{copySuccess}</p>}
-              </div>
             </div>
           )}
         </main>
